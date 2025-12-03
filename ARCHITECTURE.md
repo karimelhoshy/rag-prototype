@@ -2,81 +2,83 @@
 
 ## System Overview
 
+### Data Ingestion Pipeline
+
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         Cloud Storage                            │
-│  ┌──────────┐    ┌──────────┐    ┌──────────────┐              │
-│  │  AWS S3  │    │   GCP    │    │ Azure Blob   │              │
-│  └─────┬────┘    └─────┬────┘    └──────┬───────┘              │
-└────────┼───────────────┼─────────────────┼──────────────────────┘
-         │               │                 │
-         └───────────────┴─────────────────┘
-                         │
-                    [Download]
-                         │
-                         ▼
-         ┌───────────────────────────────┐
-         │   Document Processor          │
-         │  - PDF, DOCX, TXT, XLSX, PPTX│
-         │  - Text Chunking (1000 chars) │
-         └───────────┬───────────────────┘
-                     │
-                [Chunks]
-                     │
-                     ▼
-         ┌───────────────────────────────┐
-         │   Embedding Model             │
-         │  (sentence-transformers)      │
-         │   all-MiniLM-L6-v2            │
-         └───────────┬───────────────────┘
-                     │
-                [Vectors]
-                     │
-                     ▼
-         ┌───────────────────────────────┐
-         │   ChromaDB                    │
-         │   Vector Database             │
-         │   (Local Storage)             │
-         └───────────┬───────────────────┘
-                     │
-                     │
-    ┌────────────────┴────────────────┐
-    │                                 │
-    ▼                                 ▼
-┌────────────┐              ┌─────────────────┐
-│ Streamlit  │              │   CLI Tools     │
-│    UI      │              │  - ingest.py    │
-│            │              │  - query.py     │
-└─────┬──────┘              └────────┬────────┘
-      │                              │
-      └──────────────┬───────────────┘
-                     │
-                [Query]
-                     │
-                     ▼
-         ┌───────────────────────────────┐
-         │   RAG Query Engine            │
-         │  1. Embed query               │
-         │  2. Similarity search         │
-         │  3. Retrieve context          │
-         │  4. Generate answer           │
-         └───────────┬───────────────────┘
-                     │
-                [Context]
-                     │
-                     ▼
-         ┌───────────────────────────────┐
-         │   OpenAI GPT                  │
-         │   (gpt-4o)                    │
-         │   Generate Answer             │
-         └───────────┬───────────────────┘
-                     │
-                [Answer]
-                     │
-                     ▼
-              ┌─────────────┐
-              │    User     │
-              └─────────────┘
+        Cloud Storage Providers
+        ┌─────────┬─────────┬─────────┐
+        │ AWS S3  │ GCP CS  │ Azure   │
+        └────┬────┴────┬────┴────┬────┘
+             │         │         │
+             └─────────┴─────────┘
+                   ▼
+        Storage Connector Layer
+        ┌──────────────────────┐
+        │   StorageConnector   │
+        │  (Base Interface)    │
+        └──────────┬───────────┘
+                   │ [download_all]
+                   ▼
+        Document Processor
+        ┌──────────────────────────────┐
+        │  • PDF, DOCX, TXT            │
+        │  • XLSX, PPTX Support        │
+        │  • Recursive Chunking        │
+        │  • Config: 1000 chars/chunk  │
+        └──────────┬───────────────────┘
+                   │ [Document objects]
+                   ▼
+        Embedding Generation
+        ┌──────────────────────────────┐
+        │  Sentence-Transformers       │
+        │  Model: all-MiniLM-L6-v2     │
+        │  384-dim embeddings          │
+        └──────────┬───────────────────┘
+                   │ [Embeddings + Metadata]
+                   ▼
+        Vector Database (ChromaDB)
+        ┌──────────────────────────────┐
+        │  • Local Persistent Storage  │
+        │  • Vector + Metadata Store   │
+        │  • Similarity Search Index   │
+        └──────────┬───────────────────┘
+                   │
+        ┌──────────┴──────────┐
+        │                     │
+```
+
+### Query Pipeline
+
+```
+     User Interface          Query Flow
+    ┌─────────────┐         ┌────────────┐
+    │ Streamlit   │◄────────│ Query Text │
+    │ Web UI      │         └────────────┘
+    └──────┬──────┘
+           │ [query, top_k]
+           ▼
+    RAG Query Engine
+    ┌────────────────────────────┐
+    │ 1. Embed query             │
+    │ 2. Search ChromaDB         │
+    │ 3. Build context prompt    │
+    └────────────┬───────────────┘
+                 │ [Context + Query]
+                 ▼
+    OpenAI GPT-4o
+    ┌────────────────────────────┐
+    │ • Generate Answer          │
+    │ • Temperature: 0.7         │
+    │ • Max Tokens: Configurable │
+    └────────────┬───────────────┘
+                 │ [Answer + Sources]
+                 ▼
+         Return Results
+         ┌──────────────────┐
+         │ Answer Text      │
+         │ Source Documents │
+         │ Confidence Scores│
+         └──────────────────┘
 ```
 
 ## Component Details

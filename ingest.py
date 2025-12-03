@@ -3,7 +3,14 @@
 CLI script for document ingestion
 """
 import argparse
+import logging
 from src.ingestion import IngestionPipeline
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
 
 def main():
@@ -26,10 +33,11 @@ def main():
 
     args = parser.parse_args()
 
-    print(f"Starting ingestion from {args.storage}...")
+    logger = logging.getLogger(__name__)
+    logger.info(f"Starting ingestion from {args.storage}...")
     pipeline = IngestionPipeline(storage_type=args.storage)
     pipeline.run(prefix=args.prefix)
-    print("Ingestion complete!")
+    logger.info("Ingestion complete!")
 
 
 if __name__ == "__main__":

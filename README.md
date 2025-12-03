@@ -166,7 +166,7 @@ python query.py "Summarize the main topics" --top-k 10
 All settings can be configured via environment variables or by editing [config/settings.py](config/settings.py):
 
 - `EMBEDDING_MODEL`: Sentence transformer model (default: "all-MiniLM-L6-v2")
-- `LLM_MODEL`: OpenAI model (default: "gpt-3.5-turbo")
+- `LLM_MODEL`: OpenAI model (default: "gpt-4o")
 - `LLM_TEMPERATURE`: Response creativity (default: 0.7)
 - `CHROMA_PERSIST_DIRECTORY`: Vector DB storage location (default: "./chroma_db")
 - `COLLECTION_NAME`: ChromaDB collection name (default: "documents")

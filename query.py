@@ -3,7 +3,14 @@
 CLI script for querying the RAG system
 """
 import argparse
+import logging
 from src.rag import RAGQueryEngine
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
 
 def main():

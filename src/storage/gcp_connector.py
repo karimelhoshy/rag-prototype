@@ -1,9 +1,12 @@
 import os
+import logging
 from typing import List
 from google.cloud import storage
 from google.api_core.exceptions import GoogleAPIError
 from .base import StorageConnector
 from config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class GCPConnector(StorageConnector):
@@ -22,7 +25,7 @@ class GCPConnector(StorageConnector):
             blobs = self.bucket.list_blobs(prefix=prefix)
             return [blob.name for blob in blobs]
         except GoogleAPIError as e:
-            print(f"Error listing GCP files: {e}")
+            logger.error(f"Error listing GCP files: {e}", exc_info=True, extra={"bucket": self.bucket_name})
             return []
 
     def download_file(self, file_path: str, local_path: str) -> str:
@@ -33,7 +36,7 @@ class GCPConnector(StorageConnector):
             blob.download_to_filename(local_path)
             return local_path
         except GoogleAPIError as e:
-            print(f"Error downloading file {file_path}: {e}")
+            logger.error(f"Error downloading file {file_path}: {e}", exc_info=True)
             return None
 
     def download_all(self, local_dir: str, prefix: str = "") -> List[str]:

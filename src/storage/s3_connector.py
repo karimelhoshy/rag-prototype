@@ -1,9 +1,12 @@
 import os
+import logging
 from typing import List
 import boto3
 from botocore.exceptions import ClientError
 from .base import StorageConnector
 from config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class S3Connector(StorageConnector):
@@ -29,7 +32,7 @@ class S3Connector(StorageConnector):
 
             return [obj['Key'] for obj in response['Contents']]
         except ClientError as e:
-            print(f"Error listing S3 files: {e}")
+            logger.error(f"Error listing S3 files: {e}", exc_info=True, extra={"bucket": self.bucket_name})
             return []
 
     def download_file(self, file_path: str, local_path: str) -> str:
@@ -39,7 +42,7 @@ class S3Connector(StorageConnector):
             self.s3_client.download_file(self.bucket_name, file_path, local_path)
             return local_path
         except ClientError as e:
-            print(f"Error downloading file {file_path}: {e}")
+            logger.error(f"Error downloading file {file_path}: {e}", exc_info=True)
             return None
 
     def download_all(self, local_dir: str, prefix: str = "") -> List[str]:

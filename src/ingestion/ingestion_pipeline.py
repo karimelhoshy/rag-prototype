@@ -1,9 +1,12 @@
 import os
 import shutil
+import logging
 from typing import List, Optional
 from .document_processor import DocumentProcessor
 from src.storage import StorageConnector, S3Connector, GCPConnector, AzureConnector
 from src.vectordb import ChromaVectorDB
+
+logger = logging.getLogger(__name__)
 
 
 class IngestionPipeline:
@@ -35,34 +38,34 @@ class IngestionPipeline:
         try:
             os.makedirs(self.temp_dir, exist_ok=True)
 
-            print(f"Downloading files from {self.storage_type}...")
+            logger.info(f"Downloading files from {self.storage_type}...")
             downloaded_files = self.storage_connector.download_all(
                 self.temp_dir,
                 prefix=prefix
             )
 
             if not downloaded_files:
-                print("No files downloaded. Check your storage configuration.")
+                logger.warning("No files downloaded. Check your storage configuration.")
                 return
 
-            print(f"Downloaded {len(downloaded_files)} files")
+            logger.info(f"Downloaded {len(downloaded_files)} files")
 
-            print("Processing documents...")
+            logger.info("Processing documents...")
             chunked_documents = self.document_processor.process_documents(
                 downloaded_files
             )
 
             if not chunked_documents:
-                print("No documents processed.")
+                logger.warning("No documents processed.")
                 return
 
-            print("Adding documents to vector database...")
+            logger.info("Adding documents to vector database...")
             self.vector_db.add_documents(chunked_documents)
 
             stats = self.vector_db.get_collection_stats()
-            print(f"Ingestion complete! Collection '{stats['name']}' now has {stats['count']} documents")
+            logger.info(f"Ingestion complete! Collection '{stats['name']}' now has {stats['count']} documents")
 
         finally:
             if os.path.exists(self.temp_dir):
                 shutil.rmtree(self.temp_dir)
-                print(f"Cleaned up temporary directory: {self.temp_dir}")
+                logger.info(f"Cleaned up temporary directory: {self.temp_dir}")

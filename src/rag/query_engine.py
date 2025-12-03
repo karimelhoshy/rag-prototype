@@ -1,7 +1,10 @@
+import logging
 from typing import List, Dict, Optional
 from openai import OpenAI
 from src.vectordb import ChromaVectorDB
 from config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class RAGQueryEngine:
@@ -50,10 +53,11 @@ Answer:"""
 
     def query(self, query_text: str) -> Dict[str, any]:
         """Query the RAG system."""
-        print(f"Searching for relevant documents...")
+        logger.info(f"Searching for relevant documents...")
         query_results = self.vector_db.query(query_text, n_results=self.top_k)
 
         if not query_results['documents'][0]:
+            logger.warning("No relevant documents found in the database")
             return {
                 "answer": "No relevant documents found in the database.",
                 "sources": [],
@@ -64,7 +68,7 @@ Answer:"""
 
         prompt = self._build_prompt(query_text, context)
 
-        print(f"Generating answer...")
+        logger.info(f"Generating answer...")
         response = self.client.chat.completions.create(
             model=self.model,
             messages=[

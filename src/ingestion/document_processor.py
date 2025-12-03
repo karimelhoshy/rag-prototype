@@ -1,4 +1,5 @@
 import os
+import logging
 from typing import List
 from pathlib import Path
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -10,6 +11,8 @@ from langchain_community.document_loaders import (
     UnstructuredPowerPointLoader,
     TextLoader
 )
+
+logger = logging.getLogger(__name__)
 
 
 class DocumentProcessor:
@@ -38,13 +41,13 @@ class DocumentProcessor:
             elif file_extension == '.txt':
                 loader = TextLoader(file_path)
             else:
-                print(f"Unsupported file type: {file_extension}")
+                logger.warning(f"Unsupported file type: {file_extension}")
                 return []
 
             documents = loader.load()
             return documents
         except Exception as e:
-            print(f"Error loading document {file_path}: {e}")
+            logger.error(f"Error loading document {file_path}: {e}", exc_info=True)
             return []
 
     def process_documents(self, file_paths: List[str]) -> List[Document]:
@@ -52,7 +55,7 @@ class DocumentProcessor:
         all_documents = []
 
         for file_path in file_paths:
-            print(f"Processing: {file_path}")
+            logger.info(f"Processing: {file_path}")
             docs = self.load_document(file_path)
 
             for doc in docs:
@@ -62,6 +65,6 @@ class DocumentProcessor:
             all_documents.extend(docs)
 
         chunked_documents = self.text_splitter.split_documents(all_documents)
-        print(f"Created {len(chunked_documents)} chunks from {len(file_paths)} documents")
+        logger.info(f"Created {len(chunked_documents)} chunks from {len(file_paths)} documents")
 
         return chunked_documents

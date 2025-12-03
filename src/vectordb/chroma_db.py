@@ -1,9 +1,13 @@
 from typing import List, Optional
+import hashlib
+import logging
 import chromadb
 from chromadb.config import Settings as ChromaSettings
 from sentence_transformers import SentenceTransformer
 from langchain.docstore.document import Document
 from config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class ChromaVectorDB:
@@ -35,7 +39,13 @@ class ChromaVectorDB:
 
         embeddings = self.embedding_model.encode(texts).tolist()
 
-        ids = [f"doc_{i}" for i in range(len(documents))]
+        # Generate deterministic IDs based on content + metadata to prevent overwrites
+        ids = [
+            hashlib.sha256(
+                f"{doc.page_content}:{doc.metadata.get('source', '')}".encode()
+            ).hexdigest()[:16]
+            for doc in documents
+        ]
 
         self.collection.add(
             embeddings=embeddings,
@@ -44,7 +54,7 @@ class ChromaVectorDB:
             ids=ids
         )
 
-        print(f"Added {len(documents)} documents to vector database")
+        logger.info(f"Added {len(documents)} documents to vector database")
 
     def query(
         self,
@@ -64,7 +74,7 @@ class ChromaVectorDB:
     def delete_collection(self) -> None:
         """Delete the collection."""
         self.client.delete_collection(self.collection_name)
-        print(f"Deleted collection: {self.collection_name}")
+        logger.info(f"Deleted collection: {self.collection_name}")
 
     def get_collection_stats(self) -> dict:
         """Get statistics about the collection."""

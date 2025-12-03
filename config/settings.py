@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     embedding_model: str = Field(default="all-MiniLM-L6-v2", env="EMBEDDING_MODEL")
 
     # LLM
-    llm_model: str = Field(default="gpt-3.5-turbo", env="LLM_MODEL")
+    llm_model: str = Field(default="gpt-4o", env="LLM_MODEL")
     llm_temperature: float = Field(default=0.7, env="LLM_TEMPERATURE")
 
     class Config:

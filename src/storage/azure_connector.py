@@ -1,9 +1,12 @@
 import os
+import logging
 from typing import List
 from azure.storage.blob import BlobServiceClient
 from azure.core.exceptions import AzureError
 from .base import StorageConnector
 from config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class AzureConnector(StorageConnector):
@@ -22,7 +25,7 @@ class AzureConnector(StorageConnector):
             blobs = self.container_client.list_blobs(name_starts_with=prefix)
             return [blob.name for blob in blobs]
         except AzureError as e:
-            print(f"Error listing Azure files: {e}")
+            logger.error(f"Error listing Azure files: {e}", exc_info=True, extra={"container": self.container_name})
             return []
 
     def download_file(self, file_path: str, local_path: str) -> str:
@@ -36,7 +39,7 @@ class AzureConnector(StorageConnector):
 
             return local_path
         except AzureError as e:
-            print(f"Error downloading file {file_path}: {e}")
+            logger.error(f"Error downloading file {file_path}: {e}", exc_info=True)
             return None
 
     def download_all(self, local_dir: str, prefix: str = "") -> List[str]:
